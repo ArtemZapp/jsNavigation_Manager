@@ -1,51 +1,56 @@
 const data = [
-  {
-    'folder': true,
-    'title': 'Grow',
-    'children': [
-      {
-        'title': 'logo.png'
-      },
-      {
-        'folder': true,
-        'title': 'English',
-        'children': [
-          {
-            'title': 'Present_Perfect.txt'
-          }
-        ]
-      }
-    ]
-  },
-  {
-    'folder': true,
-    'title': 'Soft',
-    'children': [
-      {
-        'folder': true,
-        'title': 'NVIDIA',
-        'children': null
-      },
-      {
-        'title': 'nvm-setup.exe'
-      },
-      {
-        'title': 'node.exe'
-      }
-    ]
-  },
-  {
-    'folder': true,
-    'title': 'Doc',
-    'children': [
-      {
-        'title': 'project_info.txt'
-      }
-    ]
-  },
-  {
-    'title': 'credentials.txt'
-  }
+	{
+		'folder': true,
+		'title': 'Grow',
+		'children': [
+			{
+				'title': 'logo.png'
+			},
+			{
+				'folder': true,
+				'title': 'English',
+				'children': [
+					{
+						'title': 'Present_Perfect.txt'
+					}
+				]
+			}
+		]
+	},
+	{
+		'folder': true,
+		'title': 'Soft',
+		'children': [
+			{
+				'folder': true,
+				'title': 'NVIDIA',
+				'children': null
+			},
+			{
+				'title': 'nvm-setup.exe'
+			},
+			{
+				'title': 'node.exe'
+			}
+		]
+	},
+	{
+		'folder': true,
+		'title': 'Doc',
+		'children': [
+			{
+				'title': 'project_info.txt'
+			}
+		]
+	},
+	{
+		'folder': true,
+		'title': 'Info',
+		'children': null
+	},
+	{
+		'title': 'credentials.txt'
+	}
 ];
 
 //переменные и присвоения к классам; пустые стоки между готовыми элементами 
@@ -89,31 +94,43 @@ const emptyFolder = document.createElement('p'); //элемент подпись
 emptyFolder.innerHTML = 'Folder is empty';
 emptyFolder.classList.add('italic','text-cursor');
 
+let nodeId = 0;
+
+function setId(node, nodeElement){
+	node.id = ++nodeId;
+	nodeElement.setAttribute('data-id', nodeId);
+}
+
 function createFileTree(node, nodeElement){ //node--массив children, nodeElement--папка элемент html
-	
+
 	//если нет элементов значит папка пустая, выход из функции
-	if(!node){
+	if (!node || node.length == 0){
 		let emptyFolderClone = emptyFolder.cloneNode(true);
 		nodeElement.appendChild(emptyFolderClone);
 		return;
+	} else {
+		console.log(node);
 	}
 
 	let nodeChildrenClone = nodeChildren.cloneNode(true); //клонируем ul список для присоединения
+	
 	//парсим children
 	for(let i = 0; i<node.length; i++){
 		let nodeTitle = document.createTextNode(node[i].title); //название item'а
+
 		//если нет поля фолдер, значит это файл, аппендим ноду-файл и переходим на след. итерацию
 		if(!node[i].hasOwnProperty('folder')){
 			let nodeFileClone = nodeFile.cloneNode(true); //клонируем ноду-файл
 			nodeFileClone.firstChild.appendChild(nodeTitle); //тайтл для файла
 			nodeChildrenClone.appendChild(nodeFileClone);
 			nodeElement.appendChild(nodeChildrenClone);
+			setId(node[i], nodeFileClone);
 			continue;
 		}
 
 		let nodeFolderClone = nodeFolder.cloneNode(true); //клонируем ноду-папку
 		nodeFolderClone.firstChild.appendChild(nodeTitle); //тайтл для папки
-
+		setId(node[i], nodeFolderClone);
 		//создаем переменные-слушатели
 		let closeFolder = function (){
 			node[i].folder = true; //папка закрыта 
@@ -162,12 +179,39 @@ let сontextMenuDelete = document.createElement('li');
 document.onclick = function() {
 	сontextMenu.style.display = 'none';
 }
+
+function findNode(id, array) {
+
+	//let index;
+	console.log(id);
+	let filter = array.filter(e => {e.id === id; console.log(e.id);});
+	return array.indexOf(filter[0]);
+	// if (!filter.length){
+	// 	return false;
+	// }
+	// return index;
+		// else if (array[i].hasOwnProperty(children)) {
+		// 	findNode(id, array[i].children);
+		// }
+	//return 0;
+}
+
+function deleteFromData(element){
+	console.log(data);
+	let id = element.dataset.id;
+	console.log(element);
+	let index = findNode(id, data);
+	console.log(index);
+	data.splice(index, 1);
+	console.log(data);
+}
+
 //реализация контекстного меню
 document.oncontextmenu = function(e) {
 	let element = e.target;
 	сontextMenu.classList.remove('disable');
+	e.preventDefault();
 	if (element.className.startsWith('cls-context-menu')) {
-		e.preventDefault();
 
 		сontextMenuEdit.onclick = function() {
 			element.removeChild(element.lastChild);
@@ -183,6 +227,7 @@ document.oncontextmenu = function(e) {
 				element.appendChild(text);
 			}
 		};
+
 		сontextMenuDelete.onclick = function() {
 			//если остался один li, ставим строку -- папка пуста
 			if(element.parentElement.parentElement.children.length===1){
@@ -190,40 +235,19 @@ document.oncontextmenu = function(e) {
 				let parentDiv = element.parentElement.parentElement.parentElement;
 				parentDiv.removeChild(parentDiv.lastChild);
 				parentDiv.appendChild(emptyFolderClone);
+				deleteFromData(element.parentElement);
 				return;
 			}
 			element.parentElement.remove();
+			deleteFromData(element.parentElement);
 		};
 		сontextMenu.style.left = e.pageX + 'px';
 		сontextMenu.style.top = e.pageY + 'px';
 		сontextMenu.style.display = 'block';
 	} else {
-		e.preventDefault();
 		сontextMenu.classList.add('disable');
 		сontextMenu.style.left = e.pageX + 'px';
 		сontextMenu.style.top = e.pageY + 'px';
 		сontextMenu.style.display = 'block';
 	}
 }
-
-
-var fullname = 'John Doe';
-
-var obj = {
-	fullname: 'Colin Ihrig',
-	prop: {
-		fullname: 'Aurelio De Rosa',
-		getFullname: function () {
-			return this.fullname;
-		}
-	}
-};
-
-console.log(obj.prop.getFullname()); // 1 Aurelio De Rosa
-var test = obj.prop.getFullname;
-
-console.log(test()); // 2 
-
-console.log(test.call(obj.prop)); // 3 Aurelio De Rosa
-
-console.log(test.call(obj)); // 4 Colin Ihrig
